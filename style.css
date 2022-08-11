@@ -1,0 +1,19 @@
+
+textarea{
+    border: none;
+    resize: none;
+    outline: none;
+    border-right: solid 1px rgb(0, 0, 0);
+    margin-top: 5px;
+    padding: 5px;
+    cursor: cell;
+}
+
+#txtInput{
+    background-color:rgb(245, 245, 245);
+    border: none;
+    /* border-left: solid 1px rgb(0, 0, 0); */
+    box-shadow: inset 0px 0px 5px rgba(0, 0, 0, .5);
+    border-radius: 5px;
+    cursor: text;
+}
