@@ -131,7 +131,7 @@ const splitAndReverseHex = (hexStr) => {
 }
 
 const getRegisterInBin = (register) => {
-    let hex = register.replace("(", "").replace(")", "").replace("R", "");
+    let hex = register.replace("(", "").replace(")", "").replace("R", "").replace("!","");
     if (register.includes("R") && Number(hex) >= 10) {
         console.log("===============")
         console.log("DEC:", hex);
@@ -256,6 +256,10 @@ const identifyAndHandleInstructions = (instruction) => {
             return handle_SingleDataTransfer(instruction);
         case instruction.includes("STR"):
             return handle_SingleDataTransfer(instruction);
+        case instruction.includes("LDM"):
+            return handle_BlockDataTransfer(instruction);
+        case instruction.includes("STM"):
+            return handle_BlockDataTransfer(instruction);
         case instruction.includes("BX"):
             return handle_BranchWithExchange(instruction)
         case instruction.includes("B"):
@@ -339,6 +343,46 @@ const handle_Branch = (instruction) => {
     return `${cond} ${_27to25} ${L} ${offset}`;
 }
 
+
+const handle_BlockDataTransfer = (instruction) => {
+    let components = insGetComponents(instruction);
+
+    let cond = insGetConditionCode(instruction);
+    let _27to25 = "100";
+    let P;
+    let U;
+    let S = 0;
+    let W = components[0].includes("!") ? 1 : 0;
+    let L;
+    switch (true) {
+        case instruction.includes("LDMED"):
+            L = 1; P = 1; U = 1;
+            break;
+        case instruction.includes("LDMFD"):
+            L = 1; P = 0; U = 1;
+            break;
+        case instruction.includes("LDMEA"):
+            L = 1; P = 1; U = 0;
+            break;
+        case instruction.includes("LDMFA"):
+            L = 1; P = 0; U = 0;
+            break;
+        case instruction.includes("STMFA"):
+            L = 0; P = 1; U = 1;
+            break;
+        case instruction.includes("STMEA"):
+            L = 0; P = 0; U = 1;
+            break;
+        case instruction.includes("STMFD"):
+            L = 0; P = 1; U = 0;
+            break;
+        case instruction.includes("STMED"):
+            L = 0; P = 0; U = 0;
+            break;
+    }
+    let Rn = getRegisterInBin(components[0]);
+    let RegisterList = components[1];
+}
 
 
 convertBtn.addEventListener("click", () => {
