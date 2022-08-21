@@ -82,13 +82,14 @@ const cleanse = (instructions) => {
             let sign = definitionIndex < index ? "-" : "";
             let num = definitionIndex < index ? -2 : -2;
             let direction = definitionIndex < index ? 1 : 0; // Have to add 1 if going in negative direction so it lands on instruction not #definition
-            let diffHashCountNum = definitionIndex < index ? hashCount : 0; // TODO calculate index offset based on how many #Definition are between the target #Definition based on direction
+            let diffHashCountNum = definitionIndex < index ? hashCount : hashCount-1; // TODO calculate index offset based on how many #Definition are between the target #Definition based on direction
             
-            let substitute = `B{l} ${sign}0x${(definitionIndex - index + num + direction).toString(16)}`;
+            let substitute = `B{l} ${sign}0x${Math.abs(definitionIndex - index + num + direction - diffHashCountNum).toString(16)}`;
             console.log(value+" i is:", index);
             console.log("#Definition found at index:", definitionIndex);
             console.log("Definitions Count:", hashCount);
-            console.log("B offset:", (definitionIndex - index + num + direction));
+            console.log("B offset:", (definitionIndex - index + num + direction - diffHashCountNum));
+            console.log("Substitute:", substitute);
             console.log(`${definitionIndex} - ${index} + ${num} + ${direction}`);
             instructions.splice(index, 1, substitute);
         }
@@ -307,15 +308,43 @@ const handle_SingleDataTransfer = (instruction) => {
 
     let cond = insGetConditionCode(instruction);
     let _27to26 = "01";
-    let I = "0";
+    let I = instruction.includes("R") ? 1 : 0;
     let P = "0";
     let U = "0";
     let B = "0";
-    let W = "0";
+    let W = instruction.includes("!") ? 1 : 0;
     let L = instruction.includes("LDR") ? "1" : "0";
+        switch (true) {
+        case instruction.includes("LDRED"):
+            P = 1; U = 1;
+            break;
+        case instruction.includes("LDRFD"):
+            P = 0; U = 1;
+            break;
+        case instruction.includes("LDREA"):
+            P = 1; U = 0;
+            break;
+        case instruction.includes("LDRFA"):
+            P = 0; U = 0;
+            break;
+        case instruction.includes("STRFA"):
+            P = 1; U = 1;
+            break;
+        case instruction.includes("STREA"):
+            P = 0; U = 1;
+            break;
+        case instruction.includes("STRFD"):
+            P = 1; U = 0;
+            break;
+        case instruction.includes("STRED"):
+            P = 0; U = 0;
+            break;
+    }
+
+
     let Rn = getRegisterInBin(components[1]);
     let Rd = getRegisterInBin(components[0]);
-    let Offset = "000000000000";
+    let Offset = components[2] ? hexToBin(components[2], 12) : "000000000000";
 
     return `${cond} ${_27to26} ${I} ${P} ${U} ${B} ${W} ${L} ${Rn} ${Rd} ${Offset}`;
 };
@@ -349,11 +378,11 @@ const handle_BlockDataTransfer = (instruction) => {
 
     let cond = insGetConditionCode(instruction);
     let _27to25 = "100";
-    let P;
-    let U;
+    let P = "0";
+    let U = "0";
     let S = 0;
     let W = components[0].includes("!") ? 1 : 0;
-    let L;
+    let L = "0";
     switch (true) {
         case instruction.includes("LDMED"):
             L = 1; P = 1; U = 1;
@@ -382,6 +411,8 @@ const handle_BlockDataTransfer = (instruction) => {
     }
     let Rn = getRegisterInBin(components[0]);
     let RegisterList = components[1];
+
+    return `${cond} ${_27to25} ${P} ${U} ${S} ${W} ${L} ${Rn} ${RegisterList}`;
 }
 
 
@@ -392,7 +423,7 @@ convertBtn.addEventListener("click", () => {
     hexFileData = "";
 
     let instructions = getInstructions();
-    instructions = cleanse2(instructions);
+    instructions = cleanse(instructions);
     instructions.forEach(instruction => {
         console.log("On Instruction:",instruction)
         let bin = identifyAndHandleInstructions(instruction);
